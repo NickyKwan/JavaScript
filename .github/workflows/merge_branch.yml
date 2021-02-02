@@ -1,0 +1,41 @@
+# File: .github/workflows/repo-sync.yml
+name: merge-from-master
+on:
+  schedule:
+    - cron: '1 0-15/3 * * *'
+  workflow_dispatch:
+  watch:
+    types: started
+  push:
+    branches: [ main ]
+  repository_dispatch:
+    types: sync-shylocks-Loon
+jobs:
+  repo-sync:
+    env:
+      PAT: ${{ secrets.PAT }} #此处PAT需要申请，教程详见：https://www.jianshu.com/p/bb82b3ad1d11
+      dst_key: ${{ secrets.GITEE_PRIVATE_KEY }} # 我自己同步到gitee使用，其他人可忽略
+    runs-on: ubuntu-latest
+    if: github.event.repository.owner.id == github.event.sender.id
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+
+      - name: sync shylocks-Loon
+        uses: repo-sync/github-sync@v2
+        if: env.PAT
+        with:
+          source_repo: "https://github.com/shylocks/Loon.git"
+          source_branch: "main"
+          destination_branch: "master"
+          github_token: ${{ secrets.PAT }}
+
+      - name: Merge main from master	
+        uses: devmasx/merge-branch@v1.3.1	
+        if: env.PAT	
+        with:	
+          type: now	
+          from_branch: master	
+          target_branch: main	
+          github_token: ${{ secrets.PAT }}
